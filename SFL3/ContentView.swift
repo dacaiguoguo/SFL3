@@ -105,8 +105,11 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem {
-                    Button(action: addSampleFilePath) {
-                        Label("Add Sample Path", systemImage: "plus")
+//                    Button(action: addSampleFilePath) {
+//                        Label("Add Sample Path", systemImage: "plus")
+//                    }
+                    Button(action: deleteAllFilePaths) {
+                        Label("Clear All", systemImage: "trash")
                     }
                 }
             }
@@ -116,15 +119,27 @@ struct ContentView: View {
             loadFilePaths()
         }
     }
-    
-    
-    private func loadFilePaths() {
-        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
+
+    private func loadFilePaths2() {
+        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+        let relativePath = "Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.apple.dt.xcode.sfl3"
+        let filePath = homeDirectory.appendingPathComponent(relativePath).path
+
         if let paths = readSflWithFile(filePath: filePath) {
             for path in paths {
                 addFilePath(path)
             }
         }
+    }
+
+    
+    private func loadFilePaths() {
+//        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
+//        if let paths = readSflWithFile(filePath: filePath) {
+//            for path in paths {
+//                addFilePath(path)
+//            }
+//        }
     }
 
     private func openInFinder(_ path: String?) {
@@ -161,6 +176,40 @@ struct ContentView: View {
     private func addSampleFilePath() {
         addFilePath("SamplePath/\(Date().timeIntervalSince1970)")
     }
+    
+    private func deleteAllFilePaths1() {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+
+        do {
+            try viewContext.execute(deleteRequest)
+            try viewContext.save()
+            viewContext.reset()  // 重置上下文
+        } catch {
+            print("Error deleting all file paths: \(error)")
+        }
+    }
+
+    private func deleteAllFilePaths() {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+
+        do {
+            try viewContext.execute(deleteRequest)
+            if let objects = try viewContext.fetch(fetchRequest) as? [NSManagedObject] {
+                for object in objects {
+                    viewContext.refresh(object, mergeChanges: false)
+                }
+            }
+            try viewContext.save()
+        } catch {
+            print("Error deleting all file paths: \(error)")
+        }
+        
+        print("filePaths:\(filePaths)")
+    }
+
+
 }
 
 
