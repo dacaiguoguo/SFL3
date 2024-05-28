@@ -76,16 +76,30 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(
         entity: FilePath.entity(),
-        sortDescriptors: [NSSortDescriptor(keyPath: \FilePath.createdAt, ascending: true)],
+        sortDescriptors: [
+            NSSortDescriptor(keyPath: \FilePath.isPinned, ascending: false), // Pinned items first
+            NSSortDescriptor(keyPath: \FilePath.createdAt, ascending: true)   // Then by creation time
+        ],
         animation: .default)
     private var filePaths: FetchedResults<FilePath>
 
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("File Paths")) {
-                    ForEach(filePaths) { filePath in
+                ForEach(filePaths) { filePath in
+                    HStack {
                         Text(filePath.path ?? "Unknown Path")
+                        Spacer()
+                        Button(action: {
+                            openInFinder(filePath.path)
+                        }) {
+                            Image(systemName: "folder")
+                        }
+                        Button(action: {
+                            moveToTop(filePath)
+                        }) {
+                            Image(systemName: "pin.fill")
+                        }
                     }
                 }
             }
@@ -102,7 +116,8 @@ struct ContentView: View {
             loadFilePaths()
         }
     }
-
+    
+    
     private func loadFilePaths() {
         let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
         if let paths = readSflWithFile(filePath: filePath) {
@@ -112,11 +127,29 @@ struct ContentView: View {
         }
     }
 
+    private func openInFinder(_ path: String?) {
+        guard let path = path, let url = URL(fileURLWithPath: path).deletingLastPathComponent() as URL? else { return }
+        let ret = NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
+        print("open result:\(ret)")
+    }
+
+    private func moveToTop(_ filePath: FilePath) {
+        viewContext.perform {
+            filePath.isPinned = true // Mark as pinned
+            do {
+                try viewContext.save()
+            } catch {
+                print("Failed to move to top: \(error)")
+            }
+        }
+    }
+
     private func addFilePath(_ path: String) {
         let newFilePath = FilePath(context: viewContext)
         newFilePath.path = path
         newFilePath.createdAt = Date()
         newFilePath.updatedAt = Date()
+        newFilePath.isPinned = false
 
         do {
             try viewContext.save()
