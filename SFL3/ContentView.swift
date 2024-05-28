@@ -70,75 +70,66 @@ func readSflWithData(data: Data) -> [String]? {
 
 
 import SwiftUI
+import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
+        entity: FilePath.entity(),
+        sortDescriptors: [NSSortDescriptor(keyPath: \FilePath.createdAt, ascending: true)],
         animation: .default)
-    private var items: FetchedResults<Item>
-
-    @State private var filePaths: [String] = []
-
-    init() {
-        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
-        self._filePaths = State(initialValue: readSflWithFile(filePath: filePath) ?? [])
-    }
+    private var filePaths: FetchedResults<FilePath>
 
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("Files")) {
-                    ForEach(filePaths, id: \.self) { filePath in
-                        Text(filePath)
+                Section(header: Text("File Paths")) {
+                    ForEach(filePaths) { filePath in
+                        Text(filePath.path ?? "Unknown Path")
                     }
-                }
-                
-                Section(header: Text("Core Data Items")) {
-                    ForEach(items) { item in
-                        NavigationLink(destination: Text("Item at \(item.timestamp!, formatter: itemFormatter)")) {
-                            Text(item.timestamp!, formatter: itemFormatter)
-                        }
-                    }
-                    .onDelete(perform: deleteItems)
                 }
             }
             .toolbar {
                 ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button(action: addSampleFilePath) {
+                        Label("Add Sample Path", systemImage: "plus")
                     }
                 }
             }
-            Text("Select an item")
+            Text("Select a path")
+        }
+        .onAppear {
+            loadFilePaths()
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+    private func loadFilePaths() {
+        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
+        if let paths = readSflWithFile(filePath: filePath) {
+            for path in paths {
+                addFilePath(path)
             }
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+    private func addFilePath(_ path: String) {
+        let newFilePath = FilePath(context: viewContext)
+        newFilePath.path = path
+        newFilePath.createdAt = Date()
+        newFilePath.updatedAt = Date()
+
+        do {
+            try viewContext.save()
+        } catch {
+            print("Failed to save file path: \(error)")
         }
+    }
+
+    private func addSampleFilePath() {
+        addFilePath("SamplePath/\(Date().timeIntervalSince1970)")
     }
 }
+
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()
