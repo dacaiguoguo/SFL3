@@ -13,6 +13,7 @@
 		5B16B2512C05942600132E42 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5B16B2502C05942600132E42 /* Preview Assets.xcassets */; };
 		5B16B2532C05942600132E42 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2522C05942600132E42 /* Persistence.swift */; };
 		5B16B2562C05942600132E42 /* SFL3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2542C05942600132E42 /* SFL3.xcdatamodeld */; };
+		5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */ = {isa = PBXBuildFile; fileRef = 5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		5B16B2522C05942600132E42 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		5B16B2552C05942600132E42 /* SFL3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SFL3.xcdatamodel; sourceTree = "<group>"; };
 		5B16B2572C05942600132E42 /* SFL3.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SFL3.entitlements; sourceTree = "<group>"; };
+		5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = com.apple.dt.xcode.sfl3; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 				5B16B24B2C05942500132E42 /* ContentView.swift */,
 				5B16B24D2C05942600132E42 /* Assets.xcassets */,
 				5B16B2522C05942600132E42 /* Persistence.swift */,
+				5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */,
 				5B16B2572C05942600132E42 /* SFL3.entitlements */,
 				5B16B2542C05942600132E42 /* SFL3.xcdatamodeld */,
 				5B16B24F2C05942600132E42 /* Preview Content */,
@@ -133,6 +136,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */,
 				5B16B2512C05942600132E42 /* Preview Assets.xcassets in Resources */,
 				5B16B24E2C05942600132E42 /* Assets.xcassets in Resources */,
 			);
