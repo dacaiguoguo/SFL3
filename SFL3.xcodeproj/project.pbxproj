@@ -14,6 +14,7 @@
 		5B16B2532C05942600132E42 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2522C05942600132E42 /* Persistence.swift */; };
 		5B16B2562C05942600132E42 /* SFL3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2542C05942600132E42 /* SFL3.xcdatamodeld */; };
 		5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */ = {isa = PBXBuildFile; fileRef = 5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */; };
+		5BAAF4FA2C078299008D5017 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BAAF4F92C078299008D5017 /* FileWatcher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		5B16B2552C05942600132E42 /* SFL3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SFL3.xcdatamodel; sourceTree = "<group>"; };
 		5B16B2572C05942600132E42 /* SFL3.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SFL3.entitlements; sourceTree = "<group>"; };
 		5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = com.apple.dt.xcode.sfl3; sourceTree = "<group>"; };
+		5BAAF4F92C078299008D5017 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 			children = (
 				5B16B2492C05942500132E42 /* SFL3App.swift */,
 				5B16B24B2C05942500132E42 /* ContentView.swift */,
+				5BAAF4F92C078299008D5017 /* FileWatcher.swift */,
 				5B16B24D2C05942600132E42 /* Assets.xcassets */,
 				5B16B2522C05942600132E42 /* Persistence.swift */,
 				5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */,
@@ -151,6 +154,7 @@
 			files = (
 				5B16B2532C05942600132E42 /* Persistence.swift in Sources */,
 				5B16B2562C05942600132E42 /* SFL3.xcdatamodeld in Sources */,
+				5BAAF4FA2C078299008D5017 /* FileWatcher.swift in Sources */,
 				5B16B24C2C05942500132E42 /* ContentView.swift in Sources */,
 				5B16B24A2C05942500132E42 /* SFL3App.swift in Sources */,
 			);

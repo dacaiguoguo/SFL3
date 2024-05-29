@@ -35,7 +35,7 @@ func readSflWithData(data: Data) -> [String]? {
     do {
         let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
         unarchiver.requiresSecureCoding = false
-        if let recentListInfo = unarchiver.decodeObject(of: [NSDictionary.self, NSArray.self], forKey: NSKeyedArchiveRootObjectKey) as? [String: Any] {
+        if let recentListInfo = unarchiver.decodeObject(of: [NSObject.self, NSDictionary.self, NSArray.self], forKey: NSKeyedArchiveRootObjectKey) as? [String: Any] {
             recentList = recentListInfo["items"] as? [Any]
         }
         unarchiver.finishDecoding()
@@ -91,49 +91,68 @@ struct ContentView: View {
         self.filePaths.nsPredicate = NSPredicate(value: true)  // 触发重新查询和UI更新
         counter += 1
     }
-    
+
+    @StateObject private var viewModel: FilePathsViewModel
+
+     init() {
+         _viewModel = StateObject(wrappedValue: FilePathsViewModel(context: PersistenceController.shared.container.viewContext))
+     }
+
+
+    private func fileDidChange() {
+        // 重新读取文件
+        print("File changed!")
+        // 在这里添加你的文件读取逻辑
+    }
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(filePaths) { filePath in
-                    HStack {
-                        Text(filePath.path ?? "Unknown Path")
-                        Spacer()
-                        Button(action: {
-                            openInFinder(filePath.path)
-                        }) {
-                            Image(systemName: "folder")
-                        }
-                        Button(action: {
-                            moveToTop(filePath)
-                        }) {
-                            Image(systemName: "pin.fill")
-                        }
+        List {
+            ForEach(filePaths) { filePath in
+                HStack {
+                    Text(filePath.path ?? "Unknown Path")
+                    Spacer()
+                    Button(action: {
+                        openInFinder(filePath.path)
+                    }) {
+                        Image(systemName: "folder")
+                    }
+                    Button(action: {
+                        moveToTop(filePath)
+                    }) {
+                        Image(systemName: "pin.fill")
                     }
                 }
-            }.id(counter) // 强制重新创建视图
-                .toolbar {
-                    ToolbarItem {
-                        Button(action: deleteAllFilePaths) {
-                            Label("Clear All", systemImage: "trash")
-                        }
-                    }
-                    ToolbarItem {
-                        Button(action: requestAgent) {
-                            Label("Give Auth", systemImage: "plus.circle")
-                        }
-                    }
-                    ToolbarItem {
-                        Button(action: requestDev) {
-                            Label("Give Dev", systemImage: "plus.diamond")
-                        }
+                .contentShape(Rectangle()) // Make the entire HStack tappable
+                .onTapGesture {
+                    openInNS(filePath.path)
+                }
+            }
+        }.id(counter) // 强制重新创建视图
+            .toolbar {
+                ToolbarItem {
+                    Button(action: deleteAllFilePaths) {
+                        Label("Clear All", systemImage: "trash")
                     }
                 }
-            Text("Select a path")
-        }
-        .onAppear {
-            loadFilePaths()
-        }
+                ToolbarItem {
+                    Button(action: requestAgent) {
+                        Label("Give Auth", systemImage: "plus.circle")
+                    }
+                }
+                ToolbarItem {
+                    Button(action: requestDev) {
+                        Label("Give Dev", systemImage: "plus.diamond")
+                    }
+                }
+            }
+            .onAppear {
+                        viewModel.loadFilePaths()
+                    }
+    }
+    
+    private func openInFinder(_ path: String?) {
+        guard let path = path else { return }
+        let url = URL(fileURLWithPath: path)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     
     private func loadFilePaths() {
@@ -147,16 +166,10 @@ struct ContentView: View {
         }
         
         let _ = resolvedBookmark(key: "dev")
-//        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
-//        if let paths = readSflWithFile(filePath: filePath) {
-//            for path in paths {
-//                addFilePath(path)
-//            }
-//        }
     }
     
-    private func openInFinder(_ path: String?) {
-        guard let path = path, let url = URL(fileURLWithPath: path).deletingLastPathComponent() as URL? else { return }
+    private func openInNS(_ path: String?) {
+        guard let path = path, let url = URL(fileURLWithPath: path) as URL? else { return }
         let ret = NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
         print("open result:\(ret)")
     }
@@ -285,53 +298,54 @@ struct ContentView: View {
                 print("At bookmark \(accessGranted).")
             }
         }
-
+        
     }
-
-    func saveBookmarkData(from docURL: URL, key: String = "ApplicationRecentDocuments") {
-        do {
-            // 创建只读访问的安全书签数据
-            let bookmarkData = try docURL.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
-            
-            // 将书签数据保存到 UserDefaults
-            UserDefaults.standard.set(bookmarkData, forKey: key)
-        } catch {
-            print("Failed to create bookmark data: \(error)")
-        }
-    }
-
-    func resolvedBookmark(key: String) -> URL? {
-        let userDefaults = UserDefaults.standard
-        guard let bookmarkData = userDefaults.data(forKey: key) else {
-            print("No bookmark data found.")
-            return nil
-        }
-
-        var isStale = false
-        do {
-            let docURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
-            if isStale {
-                // If the bookmark data is stale, create a new bookmark data from the URL
-                let newBookmarkData = try docURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-                userDefaults.set(newBookmarkData, forKey: key)
-            }
-
-            // Start accessing the resource using the security-scoped URL
-            let accessGranted = docURL.startAccessingSecurityScopedResource()
-            if !accessGranted {
-                print("Failed to access the resource.")
-                return nil
-            }
-            return docURL
-        } catch {
-            print("Error resolving bookmark or creating new bookmark: \(error)")
-            return nil
-        }
-    }
-
+    
+   
+    
     
 }
 
+func saveBookmarkData(from docURL: URL, key: String = "ApplicationRecentDocuments") {
+    do {
+        // 创建只读访问的安全书签数据
+        let bookmarkData = try docURL.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+        
+        // 将书签数据保存到 UserDefaults
+        UserDefaults.standard.set(bookmarkData, forKey: key)
+    } catch {
+        print("Failed to create bookmark data: \(error)")
+    }
+}
+
+func resolvedBookmark(key: String) -> URL? {
+    let userDefaults = UserDefaults.standard
+    guard let bookmarkData = userDefaults.data(forKey: key) else {
+        print("No bookmark data found.")
+        return nil
+    }
+    
+    var isStale = false
+    do {
+        let docURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
+        if isStale {
+            // If the bookmark data is stale, create a new bookmark data from the URL
+            let newBookmarkData = try docURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+            userDefaults.set(newBookmarkData, forKey: key)
+        }
+        
+        // Start accessing the resource using the security-scoped URL
+        let accessGranted = docURL.startAccessingSecurityScopedResource()
+        if !accessGranted {
+            print("Failed to access the resource.")
+            return nil
+        }
+        return docURL
+    } catch {
+        print("Error resolving bookmark or creating new bookmark: \(error)")
+        return nil
+    }
+}
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()
