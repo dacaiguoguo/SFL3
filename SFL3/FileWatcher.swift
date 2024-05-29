@@ -13,23 +13,23 @@ class FileWatcher {
     private var fileDescriptor: CInt = -1
     private var source: DispatchSourceFileSystemObject?
 
-    init(path: String, callback: @escaping () -> Void) {
+    init?(path: String, callback: @escaping () -> Void) {
         fileDescriptor = open(path, O_EVTONLY)
         guard fileDescriptor != -1 else {
             print("Failed to open file at path: \(path)")
-            return
+            return nil
         }
 
-        source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fileDescriptor, eventMask: .write, queue: DispatchQueue.global())
+        source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fileDescriptor, eventMask: .all, queue: DispatchQueue.global())
 
-        source?.setEventHandler {
+        source?.setEventHandler(handler: {
             callback()
-        }
+        })
 
-        source?.setCancelHandler {
+        source?.setCancelHandler(handler: {
             close(self.fileDescriptor)
             self.fileDescriptor = -1
-        }
+        })
 
         source?.resume()
     }
@@ -38,6 +38,7 @@ class FileWatcher {
         source?.cancel()
     }
 }
+
 import SwiftUI
 import Combine
 import CoreData
