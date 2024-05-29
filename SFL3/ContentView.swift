@@ -33,9 +33,12 @@ func readSflWithData(data: Data) -> [String]? {
     
     var recentList: [Any]?
     do {
-        if let recentListInfo = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [String: Any] {
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.requiresSecureCoding = false
+        if let recentListInfo = unarchiver.decodeObject(of: [NSDictionary.self, NSArray.self], forKey: NSKeyedArchiveRootObjectKey) as? [String: Any] {
             recentList = recentListInfo["items"] as? [Any]
         }
+        unarchiver.finishDecoding()
     } catch {
         print("Exception during unarchiving: \(error)")
         return nil
@@ -83,12 +86,12 @@ struct ContentView: View {
         animation: .default)
     private var filePaths: FetchedResults<FilePath>
     @State private var counter = 0
-
+    
     private func refreshUI() {
         self.filePaths.nsPredicate = NSPredicate(value: true)  // 触发重新查询和UI更新
         counter += 1
     }
-
+    
     var body: some View {
         NavigationView {
             List {
@@ -109,35 +112,35 @@ struct ContentView: View {
                     }
                 }
             }.id(counter) // 强制重新创建视图
-            .toolbar {
-                ToolbarItem {
-//                    Button(action: addSampleFilePath) {
-//                        Label("Add Sample Path", systemImage: "plus")
-//                    }
-                    Button(action: deleteAllFilePaths) {
-                        Label("Clear All", systemImage: "trash")
+                .toolbar {
+                    ToolbarItem {
+                        //                    Button(action: addSampleFilePath) {
+                        //                        Label("Add Sample Path", systemImage: "plus")
+                        //                    }
+                        Button(action: deleteAllFilePaths) {
+                            Label("Clear All", systemImage: "trash")
+                        }
                     }
                 }
-            }
             Text("Select a path")
         }
         .onAppear {
             loadFilePaths()
         }
     }
-
+    
     private func loadFilePaths2() {
         let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
         let relativePath = "Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.apple.dt.xcode.sfl3"
         let filePath = homeDirectory.appendingPathComponent(relativePath).path
-
+        
         if let paths = readSflWithFile(filePath: filePath) {
             for path in paths {
                 addFilePath(path)
             }
         }
     }
-
+    
     
     private func loadFilePaths() {
         let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
@@ -147,13 +150,13 @@ struct ContentView: View {
             }
         }
     }
-
+    
     private func openInFinder(_ path: String?) {
         guard let path = path, let url = URL(fileURLWithPath: path).deletingLastPathComponent() as URL? else { return }
         let ret = NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
         print("open result:\(ret)")
     }
-
+    
     private func moveToTop(_ filePath: FilePath) {
         viewContext.perform {
             filePath.isPinned = true // Mark as pinned
@@ -164,7 +167,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     private func addFilePath(_ path: String) {
         // 检查是否已经存在相同的路径
         let fetchRequest: NSFetchRequest<FilePath> = FilePath.fetchRequest()
@@ -179,7 +182,7 @@ struct ContentView: View {
                 newFilePath.createdAt = Date()
                 newFilePath.updatedAt = Date()
                 newFilePath.isPinned = false
-
+                
                 try viewContext.save()
             } else {
                 // 如果存在相同的路径，更新 updatedAt 字段
@@ -191,8 +194,8 @@ struct ContentView: View {
             print("Failed to fetch file paths or save file path: \(error)")
         }
     }
-
-
+    
+    
     private func addSampleFilePath() {
         addFilePath("SamplePath/\(Date().timeIntervalSince1970)")
     }
@@ -200,7 +203,7 @@ struct ContentView: View {
     private func deleteAllFilePaths1() {
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-
+        
         do {
             try viewContext.execute(deleteRequest)
             try viewContext.save()
@@ -209,11 +212,11 @@ struct ContentView: View {
             print("Error deleting all file paths: \(error)")
         }
     }
-
+    
     private func deleteAllFilePaths() {
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-
+        
         do {
             try viewContext.execute(deleteRequest)
             if let objects = try viewContext.fetch(fetchRequest) as? [NSManagedObject] {
@@ -229,8 +232,8 @@ struct ContentView: View {
         refreshUI()
         print("filePaths:\(filePaths)")
     }
-
-
+    
+    
 }
 
 
