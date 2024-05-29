@@ -114,16 +114,14 @@ struct ContentView: View {
             }.id(counter) // 强制重新创建视图
                 .toolbar {
                     ToolbarItem {
-                        //                    Button(action: addSampleFilePath) {
-                        //                        Label("Add Sample Path", systemImage: "plus")
-                        //                    }
-//                        Button(action: deleteAllFilePaths) {
-//                            Label("Clear All", systemImage: "trash")
-//                        }
+                        Button(action: deleteAllFilePaths) {
+                            Label("Clear All", systemImage: "trash")
+                        }
+                    }
+                    ToolbarItem {
                         Button(action: requestAgent) {
                             Label("Give Auth", systemImage: "plus.circle")
                         }
-                        
                     }
                 }
             Text("Select a path")
@@ -147,12 +145,20 @@ struct ContentView: View {
     
     
     private func loadFilePaths() {
-        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
-        if let paths = readSflWithFile(filePath: filePath) {
-            for path in paths {
-                addFilePath(path)
+        if let userUrl = resolvedBookmark(key: "ApplicationRecentDocuments") {
+            
+            if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
+                for path in paths {
+                    addFilePath(path)
+                }
             }
         }
+//        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
+//        if let paths = readSflWithFile(filePath: filePath) {
+//            for path in paths {
+//                addFilePath(path)
+//            }
+//        }
     }
     
     private func openInFinder(_ path: String?) {
@@ -248,10 +254,16 @@ struct ContentView: View {
         openPanel.directoryURL = URL(fileURLWithPath: path)
         openPanel.begin { (result) -> Void in
             if result == .OK, let userUrl = openPanel.url {
-                let selectedPath = userUrl.path
-                saveBookmarkData(from: userUrl)
                 let accessGranted = userUrl.startAccessingSecurityScopedResource()
-                if !accessGranted {
+                if accessGranted {
+                    saveBookmarkData(from: userUrl)
+                    let selectedPath = userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3")
+                    if let paths = readSflWithFile(filePath: selectedPath.path) {
+                        for path in paths {
+                            addFilePath(path)
+                        }
+                    }
+                } else {
                     print("Failed to access the resource.")
                 }
 //                let url = resolvedBookmark(key: selectedPath)
