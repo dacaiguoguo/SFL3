@@ -117,9 +117,13 @@ struct ContentView: View {
                         //                    Button(action: addSampleFilePath) {
                         //                        Label("Add Sample Path", systemImage: "plus")
                         //                    }
-                        Button(action: deleteAllFilePaths) {
-                            Label("Clear All", systemImage: "trash")
+//                        Button(action: deleteAllFilePaths) {
+//                            Label("Clear All", systemImage: "trash")
+//                        }
+                        Button(action: requestAgent) {
+                            Label("Give Auth", systemImage: "plus.circle")
                         }
+                        
                     }
                 }
             Text("Select a path")
@@ -233,6 +237,75 @@ struct ContentView: View {
         print("filePaths:\(filePaths)")
     }
     
+    private func requestAgent() {
+        let openPanel = NSOpenPanel()
+        openPanel.prompt = "Grant Access"
+        openPanel.message = "Please grant access to the folder"
+        openPanel.canChooseDirectories = true
+        openPanel.canCreateDirectories = false
+        // 尝试设置一个默认目录
+        let path = NSString(string: "~/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments").expandingTildeInPath
+        openPanel.directoryURL = URL(fileURLWithPath: path)
+        openPanel.begin { (result) -> Void in
+            if result == .OK, let userUrl = openPanel.url {
+                let selectedPath = userUrl.path
+                saveBookmarkData(from: userUrl)
+                let accessGranted = userUrl.startAccessingSecurityScopedResource()
+                if !accessGranted {
+                    print("Failed to access the resource.")
+                }
+//                let url = resolvedBookmark(key: selectedPath)
+                print("At bookmark \(accessGranted).")
+                print("At bookmark \(accessGranted).")
+
+                // Use the selected path
+            }
+        }
+
+    }
+    
+
+    func saveBookmarkData(from docURL: URL, key: String = "ApplicationRecentDocuments") {
+        do {
+            // 创建只读访问的安全书签数据
+            let bookmarkData = try docURL.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+            
+            // 将书签数据保存到 UserDefaults
+            UserDefaults.standard.set(bookmarkData, forKey: key)
+        } catch {
+            print("Failed to create bookmark data: \(error)")
+        }
+    }
+
+    func resolvedBookmark(key: String) -> URL? {
+        let userDefaults = UserDefaults.standard
+        guard let bookmarkData = userDefaults.data(forKey: key) else {
+            print("No bookmark data found.")
+            return nil
+        }
+
+        var isStale = false
+        do {
+            let docURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
+            if isStale {
+                // If the bookmark data is stale, create a new bookmark data from the URL
+                let newBookmarkData = try docURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+                userDefaults.set(newBookmarkData, forKey: key)
+            }
+
+            // Start accessing the resource using the security-scoped URL
+            let accessGranted = docURL.startAccessingSecurityScopedResource()
+            if !accessGranted {
+                print("Failed to access the resource.")
+                return nil
+            }
+            return docURL
+        } catch {
+            print("Error resolving bookmark or creating new bookmark: \(error)")
+            return nil
+        }
+    }
+
     
 }
 
