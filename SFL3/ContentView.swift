@@ -82,6 +82,12 @@ struct ContentView: View {
         ],
         animation: .default)
     private var filePaths: FetchedResults<FilePath>
+    @State private var counter = 0
+
+    private func refreshUI() {
+        self.filePaths.nsPredicate = NSPredicate(value: true)  // 触发重新查询和UI更新
+        counter += 1
+    }
 
     var body: some View {
         NavigationView {
@@ -102,7 +108,7 @@ struct ContentView: View {
                         }
                     }
                 }
-            }
+            }.id(counter) // 强制重新创建视图
             .toolbar {
                 ToolbarItem {
 //                    Button(action: addSampleFilePath) {
@@ -134,12 +140,12 @@ struct ContentView: View {
 
     
     private func loadFilePaths() {
-//        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
-//        if let paths = readSflWithFile(filePath: filePath) {
-//            for path in paths {
-//                addFilePath(path)
-//            }
-//        }
+        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
+        if let paths = readSflWithFile(filePath: filePath) {
+            for path in paths {
+                addFilePath(path)
+            }
+        }
     }
 
     private func openInFinder(_ path: String?) {
@@ -160,18 +166,32 @@ struct ContentView: View {
     }
 
     private func addFilePath(_ path: String) {
-        let newFilePath = FilePath(context: viewContext)
-        newFilePath.path = path
-        newFilePath.createdAt = Date()
-        newFilePath.updatedAt = Date()
-        newFilePath.isPinned = false
-
+        // 检查是否已经存在相同的路径
+        let fetchRequest: NSFetchRequest<FilePath> = FilePath.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "path == %@", path)
+        
         do {
-            try viewContext.save()
+            let existingPaths = try viewContext.fetch(fetchRequest)
+            if existingPaths.isEmpty {
+                // 如果没有相同的路径，插入新的路径
+                let newFilePath = FilePath(context: viewContext)
+                newFilePath.path = path
+                newFilePath.createdAt = Date()
+                newFilePath.updatedAt = Date()
+                newFilePath.isPinned = false
+
+                try viewContext.save()
+            } else {
+                // 如果存在相同的路径，更新 updatedAt 字段
+                let existingFilePath = existingPaths.first!
+                existingFilePath.updatedAt = Date()
+                try viewContext.save()
+            }
         } catch {
-            print("Failed to save file path: \(error)")
+            print("Failed to fetch file paths or save file path: \(error)")
         }
     }
+
 
     private func addSampleFilePath() {
         addFilePath("SamplePath/\(Date().timeIntervalSince1970)")
@@ -206,6 +226,7 @@ struct ContentView: View {
             print("Error deleting all file paths: \(error)")
         }
         
+        refreshUI()
         print("filePaths:\(filePaths)")
     }
 
