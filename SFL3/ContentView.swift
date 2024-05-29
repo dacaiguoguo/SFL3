@@ -123,6 +123,11 @@ struct ContentView: View {
                             Label("Give Auth", systemImage: "plus.circle")
                         }
                     }
+                    ToolbarItem {
+                        Button(action: requestDev) {
+                            Label("Give Dev", systemImage: "plus.diamond")
+                        }
+                    }
                 }
             Text("Select a path")
         }
@@ -130,19 +135,6 @@ struct ContentView: View {
             loadFilePaths()
         }
     }
-    
-    private func loadFilePaths2() {
-        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
-        let relativePath = "Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.apple.dt.xcode.sfl3"
-        let filePath = homeDirectory.appendingPathComponent(relativePath).path
-        
-        if let paths = readSflWithFile(filePath: filePath) {
-            for path in paths {
-                addFilePath(path)
-            }
-        }
-    }
-    
     
     private func loadFilePaths() {
         if let userUrl = resolvedBookmark(key: "ApplicationRecentDocuments") {
@@ -153,6 +145,8 @@ struct ContentView: View {
                 }
             }
         }
+        
+        let _ = resolvedBookmark(key: "dev")
 //        let filePath = Bundle.main.path(forResource: "com.apple.dt.xcode", ofType: "sfl3") ?? ""
 //        if let paths = readSflWithFile(filePath: filePath) {
 //            for path in paths {
@@ -266,16 +260,33 @@ struct ContentView: View {
                 } else {
                     print("Failed to access the resource.")
                 }
-//                let url = resolvedBookmark(key: selectedPath)
                 print("At bookmark \(accessGranted).")
+            }
+        }
+    }
+    
+    private func requestDev() {
+        let openPanel = NSOpenPanel()
+        openPanel.prompt = "Grant Access"
+        openPanel.message = "Please grant access to the folder"
+        openPanel.canChooseDirectories = true
+        openPanel.canCreateDirectories = false
+        // 尝试设置一个默认目录
+        let path = NSString(string: "~/Developer").expandingTildeInPath
+        openPanel.directoryURL = URL(fileURLWithPath: path)
+        openPanel.begin { (result) -> Void in
+            if result == .OK, let userUrl = openPanel.url {
+                let accessGranted = userUrl.startAccessingSecurityScopedResource()
+                if accessGranted {
+                    saveBookmarkData(from: userUrl, key: "dev")
+                } else {
+                    print("Failed to access the resource.")
+                }
                 print("At bookmark \(accessGranted).")
-
-                // Use the selected path
             }
         }
 
     }
-    
 
     func saveBookmarkData(from docURL: URL, key: String = "ApplicationRecentDocuments") {
         do {
