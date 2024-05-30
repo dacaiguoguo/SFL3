@@ -48,6 +48,11 @@ struct ContentView: View {
                             .resizable()
                             .frame(width: 40, height: 40)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
+                    } else {
+                        Image(systemName: "pencil.line")
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     Text(filePath.path ?? "Unknown Path")
                     Spacer()
@@ -103,6 +108,7 @@ struct ContentView: View {
     }
     
     private func loadFilePaths() {
+        let _ = resolvedBookmark(key: "dev")
         if let userUrl = resolvedBookmark(key: "ApplicationRecentDocuments") {
             
             if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
@@ -111,7 +117,6 @@ struct ContentView: View {
                 }
             }
         }
-        let _ = resolvedBookmark(key: "dev")
     }
     
     private func addFilePath(_ path: String) {
@@ -155,48 +160,78 @@ struct ContentView: View {
     }
     
     private func findAppIcon(in filePath: String, completion: @escaping (Data?) -> Void) {
+        completion(nil)
+        return
         DispatchQueue.global(qos: .default).async {
             let fileManager = FileManager.default
             let workPathURL = URL(fileURLWithPath: filePath).deletingLastPathComponent()
             let enumerator = fileManager.enumerator(at: workPathURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             
             var appiconsetURL: URL?
+            var depthCounter = [URL: Int]()
+            
             while let fileURL = enumerator?.nextObject() as? URL {
-                print("fileURL:\(fileURL)")
+                let currentDepth = (depthCounter[fileURL.deletingLastPathComponent()] ?? 0) + 1
+                depthCounter[fileURL] = currentDepth
+                if fileURL.lastPathComponent == "Pods" {
+                    enumerator?.skipDescendants()
+                    continue
+                }
+                if fileURL.pathExtension == "app" {
+                    enumerator?.skipDescendants()
+                    continue
+                }
+                if fileURL.lastPathComponent.contains("Assets23") {
+                    print("33")
+                }
+                
+                
+                print("fileURL: \(fileURL), depth: \(currentDepth)")
+                if currentDepth > 5 {
+                    enumerator?.skipDescendants()
+                    continue
+                }
+                
                 if fileURL.pathExtension == "appiconset" {
                     appiconsetURL = fileURL
-                    print("appiconsetURL11:\(appiconsetURL)")
+                    print("appiconsetURL found: \(appiconsetURL!)")
                     break // Stop after finding the first appiconset folder
                 }
             }
             
             var foundIcon = false // Control flag to break the loop
-            print("appiconsetURL:\(appiconsetURL)")
+            print("appiconsetURL33: \(String(describing: appiconsetURL))")
 
             if let appiconset = appiconsetURL {
+                print("appiconsetURL44: \(appiconset)")
                 let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-                while let iconFileURL = iconEnumerator?.nextObject() as? URL, !foundIcon { // Check the flag
+                while let iconFileURL = iconEnumerator?.nextObject() as? URL, !foundIcon {
+                    if iconFileURL.pathExtension != "png" {
+                        continue
+                    }
+                    print("appiconsetURL55: \(iconFileURL)")
                     if let iconData = try? Data(contentsOf: iconFileURL) {
                         DispatchQueue.main.async {
                             completion(iconData)
                         }
-                        foundIcon = true // Set the flag to true to break the loop
+                        foundIcon = true
                     }
                 }
             }
             
             if !foundIcon {
                 DispatchQueue.main.async {
-                    if let iconData = try? Data(contentsOf: Bundle.main.url(forResource: "XcodeIcon@2x", withExtension: "png")!) {
-                        completion(iconData)
-                    } else {
-                        completion(nil)
-                    }
+//                    if let iconData = try? Data(contentsOf: Bundle.main.url(forResource: "XcodeIcon@2x", withExtension: "png")!) {
+//                        completion(iconData)
+//                    } else {
+//                    }
+                    completion(nil)
+
                 }
             }
         }
     }
-    
+
     
     func deleteAllFilePaths() {
         
