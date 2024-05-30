@@ -8,8 +8,6 @@
 import SwiftUI
 import CoreData
 
-import SwiftUI
-import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -45,6 +43,12 @@ struct ContentView: View {
         List {
             ForEach(filePaths) { filePath in
                 HStack {
+                    if let iconData = filePath.icon, let nsImage = NSImage(data: iconData) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
                     Text(filePath.path ?? "Unknown Path")
                     Spacer()
                     Button(action: {
@@ -114,33 +118,88 @@ struct ContentView: View {
         // 检查是否已经存在相同的路径
         let fetchRequest: NSFetchRequest<FilePath> = FilePath.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "path == %@", path)
-
+        
         do {
             let existingPaths = try viewContext.fetch(fetchRequest)
+            var filePathObject: FilePath
+            
             if existingPaths.isEmpty {
                 // 如果没有相同的路径，插入新的路径
-                let newFilePath = FilePath(context: viewContext)
-                newFilePath.path = path
-                newFilePath.createdAt = Date()
-                newFilePath.updatedAt = Date()
-                newFilePath.isPinned = false
+                filePathObject = FilePath(context: viewContext)
+                filePathObject.path = path
+                filePathObject.createdAt = Date()
+                filePathObject.updatedAt = Date()
+                filePathObject.isPinned = false
             } else {
                 // 如果存在相同的路径，更新 updatedAt 字段
-                let existingFilePath = existingPaths.first!
-                existingFilePath.updatedAt = Date()
+                filePathObject = existingPaths.first!
+                filePathObject.updatedAt = Date()
             }
-
-            // 保存更改，只调用一次 save
-            if viewContext.hasChanges {
-                try viewContext.save()
+            
+            // 调用 findAppIcon 方法
+            findAppIcon(in: path) { iconData in
+                filePathObject.icon = iconData
+                
+                // 保存更改，只调用一次 save
+                if viewContext.hasChanges {
+                    do {
+                        try viewContext.save()
+                    } catch {
+                        print("Failed to save file path with icon: \(error)")
+                    }
+                }
             }
         } catch {
-            print("Failed to fetch file paths or save file path: \(error)")
+            print("Failed to fetch file paths: \(error)")
         }
     }
     
-    func deleteAllFilePaths() {
+    private func findAppIcon(in filePath: String, completion: @escaping (Data?) -> Void) {
+        DispatchQueue.global(qos: .default).async {
+            let fileManager = FileManager.default
+            let workPathURL = URL(fileURLWithPath: filePath).deletingLastPathComponent()
+            let enumerator = fileManager.enumerator(at: workPathURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            
+            var appiconsetURL: URL?
+            while let fileURL = enumerator?.nextObject() as? URL {
+                print("fileURL:\(fileURL)")
+                if fileURL.pathExtension == "appiconset" {
+                    appiconsetURL = fileURL
+                    print("appiconsetURL11:\(appiconsetURL)")
+                    break // Stop after finding the first appiconset folder
+                }
+            }
+            
+            var foundIcon = false // Control flag to break the loop
+            print("appiconsetURL:\(appiconsetURL)")
 
+            if let appiconset = appiconsetURL {
+                let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+                while let iconFileURL = iconEnumerator?.nextObject() as? URL, !foundIcon { // Check the flag
+                    if let iconData = try? Data(contentsOf: iconFileURL) {
+                        DispatchQueue.main.async {
+                            completion(iconData)
+                        }
+                        foundIcon = true // Set the flag to true to break the loop
+                    }
+                }
+            }
+            
+            if !foundIcon {
+                DispatchQueue.main.async {
+                    if let iconData = try? Data(contentsOf: Bundle.main.url(forResource: "XcodeIcon@2x", withExtension: "png")!) {
+                        completion(iconData)
+                    } else {
+                        completion(nil)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    func deleteAllFilePaths() {
+        
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
         
@@ -210,18 +269,18 @@ struct ContentView: View {
     }
     
     
-      
-      func moveToTop(_ filePath: FilePath) {
-
-          viewContext.perform {
-              filePath.isPinned = true // Mark as pinned
-              do {
-                  try viewContext.save()
-              } catch {
-                  print("Failed to move to top: \(error)")
-              }
-          }
-      }
+    
+    func moveToTop(_ filePath: FilePath) {
+        
+        viewContext.perform {
+            filePath.isPinned = true // Mark as pinned
+            do {
+                try viewContext.save()
+            } catch {
+                print("Failed to move to top: \(error)")
+            }
+        }
+    }
 }
 
 #Preview {

@@ -16,6 +16,7 @@
 		5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */ = {isa = PBXBuildFile; fileRef = 5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */; };
 		5B296AE52C08401E009FDCE8 /* FilePathsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B296AE42C08401E009FDCE8 /* FilePathsViewModel.swift */; };
 		5B296AE72C08412B009FDCE8 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B296AE62C08412B009FDCE8 /* Tool.swift */; };
+		5B29FB552C08C21200F6EE40 /* XcodeIcon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */; };
 		5BAAF4FA2C078299008D5017 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BAAF4F92C078299008D5017 /* FileWatcher.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = com.apple.dt.xcode.sfl3; sourceTree = "<group>"; };
 		5B296AE42C08401E009FDCE8 /* FilePathsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePathsViewModel.swift; sourceTree = "<group>"; };
 		5B296AE62C08412B009FDCE8 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
+		5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "XcodeIcon@2x.png"; sourceTree = "<group>"; };
 		5BAAF4F92C078299008D5017 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -72,6 +74,7 @@
 				5B16B24D2C05942600132E42 /* Assets.xcassets */,
 				5B16B2522C05942600132E42 /* Persistence.swift */,
 				5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */,
+				5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */,
 				5B16B2572C05942600132E42 /* SFL3.entitlements */,
 				5B16B2542C05942600132E42 /* SFL3.xcdatamodeld */,
 				5B16B24F2C05942600132E42 /* Preview Content */,
@@ -146,6 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */,
+				5B29FB552C08C21200F6EE40 /* XcodeIcon@2x.png in Resources */,
 				5B16B2512C05942600132E42 /* Preview Assets.xcassets in Resources */,
 				5B16B24E2C05942600132E42 /* Assets.xcassets in Resources */,
 			);
