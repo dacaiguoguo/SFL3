@@ -160,35 +160,36 @@ struct ContentView: View {
     }
     
     private func findAppIcon(in filePath: String, completion: @escaping (Data?) -> Void) {
-        completion(nil)
-        return
         DispatchQueue.global(qos: .default).async {
             let fileManager = FileManager.default
             let workPathURL = URL(fileURLWithPath: filePath).deletingLastPathComponent()
-            let enumerator = fileManager.enumerator(at: workPathURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-            
+            guard let enumerator = fileManager.enumerator(at: workPathURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+
             var appiconsetURL: URL?
             var depthCounter = [URL: Int]()
             
-            while let fileURL = enumerator?.nextObject() as? URL {
-                let currentDepth = (depthCounter[fileURL.deletingLastPathComponent()] ?? 0) + 1
+            while let fileURL = enumerator.nextObject() as? URL {
+                let parentURL = fileURL.deletingLastPathComponent()
+                let currentDepth = (depthCounter[parentURL] ?? 0) + 1
                 depthCounter[fileURL] = currentDepth
-                if fileURL.lastPathComponent == "Pods" {
-                    enumerator?.skipDescendants()
+
+                if fileURL.lastPathComponent == "Pods" || fileURL.pathExtension == "app" || fileURL.pathExtension == "Watch" {
+                    enumerator.skipDescendants()
                     continue
                 }
-                if fileURL.pathExtension == "app" {
-                    enumerator?.skipDescendants()
-                    continue
-                }
+                
                 if fileURL.lastPathComponent.contains("Assets23") {
                     print("33")
                 }
                 
-                
                 print("fileURL: \(fileURL), depth: \(currentDepth)")
                 if currentDepth > 5 {
-                    enumerator?.skipDescendants()
+                    enumerator.skipDescendants()
                     continue
                 }
                 
@@ -199,34 +200,34 @@ struct ContentView: View {
                 }
             }
             
-            var foundIcon = false // Control flag to break the loop
-            print("appiconsetURL33: \(String(describing: appiconsetURL))")
+            var foundIcon = false
+            print("appiconsetURL: \(String(describing: appiconsetURL))")
 
             if let appiconset = appiconsetURL {
-                print("appiconsetURL44: \(appiconset)")
-                let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-                while let iconFileURL = iconEnumerator?.nextObject() as? URL, !foundIcon {
-                    if iconFileURL.pathExtension != "png" {
-                        continue
+                print("appiconsetURL: \(appiconset)")
+                guard let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
+                    DispatchQueue.main.async {
+                        completion(nil)
                     }
-                    print("appiconsetURL55: \(iconFileURL)")
-                    if let iconData = try? Data(contentsOf: iconFileURL) {
-                        DispatchQueue.main.async {
-                            completion(iconData)
+                    return
+                }
+
+                while let iconFileURL = iconEnumerator.nextObject() as? URL, !foundIcon {
+                    if iconFileURL.pathExtension == "png" {
+                        print("iconFileURL: \(iconFileURL)")
+                        if let iconData = try? Data(contentsOf: iconFileURL) {
+                            DispatchQueue.main.async {
+                                completion(iconData)
+                            }
+                            foundIcon = true
                         }
-                        foundIcon = true
                     }
                 }
             }
             
             if !foundIcon {
                 DispatchQueue.main.async {
-//                    if let iconData = try? Data(contentsOf: Bundle.main.url(forResource: "XcodeIcon@2x", withExtension: "png")!) {
-//                        completion(iconData)
-//                    } else {
-//                    }
                     completion(nil)
-
                 }
             }
         }
