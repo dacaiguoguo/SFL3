@@ -8,70 +8,6 @@
 import SwiftUI
 import CoreData
 
-import Foundation
-
-func readSflWithFile(filePath: String) -> [String]? {
-    let fileManager = FileManager.default
-    if !fileManager.fileExists(atPath: filePath) {
-        return nil
-    }
-    
-    let fileUrl = URL(fileURLWithPath: filePath)
-    do {
-        let data = try Data(contentsOf: fileUrl, options: .mappedIfSafe)
-        return readSflWithData(data: data)
-    } catch {
-        print(error.localizedDescription)
-        return nil
-    }
-}
-
-func readSflWithData(data: Data) -> [String]? {
-    if data.isEmpty {
-        return nil
-    }
-    
-    var recentList: [Any]?
-    do {
-        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
-        unarchiver.requiresSecureCoding = false
-        if let recentListInfo = unarchiver.decodeObject(of: [NSObject.self, NSDictionary.self, NSArray.self], forKey: NSKeyedArchiveRootObjectKey) as? [String: Any] {
-            recentList = recentListInfo["items"] as? [Any]
-        }
-        unarchiver.finishDecoding()
-    } catch {
-        print("Exception during unarchiving: \(error)")
-        return nil
-    }
-    
-    guard let items = recentList else {
-        return nil
-    }
-    
-    var mutArray = [String]()
-    
-    for item in items {
-        var resolvedUrl: URL?
-        
-        if let dict = item as? [String: Any], let bookmark = dict["Bookmark"] as? Data {
-            do {
-                var isStale = false
-                resolvedUrl = try URL(resolvingBookmarkData: bookmark, options: .withoutUI, relativeTo: nil, bookmarkDataIsStale: &isStale)
-            } catch {
-                print("Error resolving bookmark: \(error)")
-                continue
-            }
-        }
-        
-        if let urlPath = resolvedUrl?.path {
-            mutArray.append(urlPath)
-        }
-    }
-    
-    return mutArray
-}
-
-
 import SwiftUI
 import CoreData
 
@@ -96,7 +32,7 @@ struct ContentView: View {
     @StateObject private var iconFinder = IconFinder()
     
     init() {
-        _viewModel = StateObject(wrappedValue: FilePathsViewModel(context: PersistenceController.shared.container.viewContext))
+        _viewModel = StateObject(wrappedValue: FilePathsViewModel())
     }
     
     
@@ -112,7 +48,7 @@ struct ContentView: View {
                     Text(filePath.path ?? "Unknown Path")
                     Spacer()
                     Button(action: {
-                        viewModel.openInFinder(filePath.path)
+                        openInFinder(filePath.path)
                     }) {
                         Image(systemName: "folder")
                     }
@@ -146,8 +82,13 @@ struct ContentView: View {
                 }
             }
             .onAppear {
-                viewModel.loadFilePaths()
-                iconFinder.findAppIcon(in: "")
+                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) { [self] in
+                    loadFilePaths()
+                    iconFinder.findAppIcon(in: "")
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .filePathsDidUpdate)) { _ in
+                loadFilePaths()
             }
     }
     
@@ -166,40 +107,14 @@ struct ContentView: View {
                 }
             }
         }
-        
         let _ = resolvedBookmark(key: "dev")
-    }
-    
-    private func openInNS(_ path: String?) {
-        guard let path = path else {
-            print("Invalid path")
-            return
-        }
-        let url = URL(fileURLWithPath: path)
-        // Attempt to open the URL in Finder
-        let success = NSWorkspace.shared.open(url)
-        
-        // Log the result of the attempt
-        print("Open result: \(success)")
-    }
-    
-    
-    private func moveToTop(_ filePath: FilePath) {
-        viewContext.perform {
-            filePath.isPinned = true // Mark as pinned
-            do {
-                try viewContext.save()
-            } catch {
-                print("Failed to move to top: \(error)")
-            }
-        }
     }
     
     private func addFilePath(_ path: String) {
         // 检查是否已经存在相同的路径
         let fetchRequest: NSFetchRequest<FilePath> = FilePath.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "path == %@", path)
-        
+
         do {
             let existingPaths = try viewContext.fetch(fetchRequest)
             if existingPaths.isEmpty {
@@ -209,12 +124,14 @@ struct ContentView: View {
                 newFilePath.createdAt = Date()
                 newFilePath.updatedAt = Date()
                 newFilePath.isPinned = false
-                
-                try viewContext.save()
             } else {
                 // 如果存在相同的路径，更新 updatedAt 字段
                 let existingFilePath = existingPaths.first!
                 existingFilePath.updatedAt = Date()
+            }
+
+            // 保存更改，只调用一次 save
+            if viewContext.hasChanges {
                 try viewContext.save()
             }
         } catch {
@@ -222,25 +139,8 @@ struct ContentView: View {
         }
     }
     
-    
-    private func addSampleFilePath() {
-        addFilePath("SamplePath/\(Date().timeIntervalSince1970)")
-    }
-    
-    private func deleteAllFilePaths1() {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
-        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        
-        do {
-            try viewContext.execute(deleteRequest)
-            try viewContext.save()
-            viewContext.reset()  // 重置上下文
-        } catch {
-            print("Error deleting all file paths: \(error)")
-        }
-    }
-    
-    private func deleteAllFilePaths() {
+    func deleteAllFilePaths() {
+
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = FilePath.fetchRequest()
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
         
@@ -255,12 +155,10 @@ struct ContentView: View {
         } catch {
             print("Error deleting all file paths: \(error)")
         }
-        
         refreshUI()
-        print("filePaths:\(filePaths)")
     }
     
-    private func requestAgent() {
+    func requestAgent() {
         let openPanel = NSOpenPanel()
         openPanel.prompt = "Grant Access"
         openPanel.message = "Please grant access to the folder"
@@ -269,7 +167,7 @@ struct ContentView: View {
         // 尝试设置一个默认目录
         let path = NSString(string: "~/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments").expandingTildeInPath
         openPanel.directoryURL = URL(fileURLWithPath: path)
-        openPanel.begin { (result) -> Void in
+        openPanel.begin { [self] (result) -> Void in
             if result == .OK, let userUrl = openPanel.url {
                 let accessGranted = userUrl.startAccessingSecurityScopedResource()
                 if accessGranted {
@@ -288,7 +186,7 @@ struct ContentView: View {
         }
     }
     
-    private func requestDev() {
+    func requestDev() {
         let openPanel = NSOpenPanel()
         openPanel.prompt = "Grant Access"
         openPanel.message = "Please grant access to the folder"
@@ -312,57 +210,19 @@ struct ContentView: View {
     }
     
     
-    
-    
-}
+      
+      func moveToTop(_ filePath: FilePath) {
 
-func saveBookmarkData(from docURL: URL, key: String = "ApplicationRecentDocuments") {
-    do {
-        // 创建只读访问的安全书签数据
-        let bookmarkData = try docURL.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
-        
-        // 将书签数据保存到 UserDefaults
-        UserDefaults.standard.set(bookmarkData, forKey: key)
-    } catch {
-        print("Failed to create bookmark data: \(error)")
-    }
+          viewContext.perform {
+              filePath.isPinned = true // Mark as pinned
+              do {
+                  try viewContext.save()
+              } catch {
+                  print("Failed to move to top: \(error)")
+              }
+          }
+      }
 }
-
-func resolvedBookmark(key: String) -> URL? {
-    let userDefaults = UserDefaults.standard
-    guard let bookmarkData = userDefaults.data(forKey: key) else {
-        print("No bookmark data found.")
-        return nil
-    }
-    
-    var isStale = false
-    do {
-        let docURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
-        if isStale {
-            // If the bookmark data is stale, create a new bookmark data from the URL
-            let newBookmarkData = try docURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-            userDefaults.set(newBookmarkData, forKey: key)
-        }
-        
-        // Start accessing the resource using the security-scoped URL
-        let accessGranted = docURL.startAccessingSecurityScopedResource()
-        if !accessGranted {
-            print("Failed to access the resource.")
-            return nil
-        }
-        return docURL
-    } catch {
-        print("Error resolving bookmark or creating new bookmark: \(error)")
-        return nil
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
 
 #Preview {
     ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
