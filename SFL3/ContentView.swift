@@ -91,14 +91,15 @@ struct ContentView: View {
         self.filePaths.nsPredicate = NSPredicate(value: true)  // 触发重新查询和UI更新
         counter += 1
     }
-
+    
     @StateObject private var viewModel: FilePathsViewModel
-
-     init() {
-         _viewModel = StateObject(wrappedValue: FilePathsViewModel(context: PersistenceController.shared.container.viewContext))
-     }
-
-
+    @StateObject private var iconFinder = IconFinder()
+    
+    init() {
+        _viewModel = StateObject(wrappedValue: FilePathsViewModel(context: PersistenceController.shared.container.viewContext))
+    }
+    
+    
     private func fileDidChange() {
         // 重新读取文件
         print("File changed!")
@@ -145,8 +146,9 @@ struct ContentView: View {
                 }
             }
             .onAppear {
-                        viewModel.loadFilePaths()
-                    }
+                viewModel.loadFilePaths()
+                iconFinder.findAppIcon(in: "")
+            }
     }
     
     private func openInFinder(_ path: String?) {
@@ -180,7 +182,7 @@ struct ContentView: View {
         // Log the result of the attempt
         print("Open result: \(success)")
     }
-
+    
     
     private func moveToTop(_ filePath: FilePath) {
         viewContext.perform {
@@ -309,7 +311,7 @@ struct ContentView: View {
         
     }
     
-   
+    
     
     
 }
