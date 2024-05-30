@@ -111,7 +111,7 @@ struct ContentView: View {
                     Text(filePath.path ?? "Unknown Path")
                     Spacer()
                     Button(action: {
-                        openInFinder(filePath.path)
+                        viewModel.openInFinder(filePath.path)
                     }) {
                         Image(systemName: "folder")
                     }
@@ -169,10 +169,18 @@ struct ContentView: View {
     }
     
     private func openInNS(_ path: String?) {
-        guard let path = path, let url = URL(fileURLWithPath: path) as URL? else { return }
-        let ret = NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
-        print("open result:\(ret)")
+        guard let path = path else {
+            print("Invalid path")
+            return
+        }
+        let url = URL(fileURLWithPath: path)
+        // Attempt to open the URL in Finder
+        let success = NSWorkspace.shared.open(url)
+        
+        // Log the result of the attempt
+        print("Open result: \(success)")
     }
+
     
     private func moveToTop(_ filePath: FilePath) {
         viewContext.perform {

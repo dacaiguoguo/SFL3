@@ -55,8 +55,7 @@ class FilePathsViewModel: ObservableObject {
 
     func loadFilePaths() {
         if let userUrl = resolvedBookmark(key: "ApplicationRecentDocuments") {
-            let filePath = userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path
-            watcher = FileWatcher(path: filePath) { [weak self] in
+            watcher = FileWatcher(path: userUrl.path) { [weak self] in
                 self?.fileDidChange()
             }
         }
@@ -87,8 +86,8 @@ class FilePathsViewModel: ObservableObject {
         }
     }
 
-    func openInFinder(_ path: String) {
-        guard let url = URL(string: path) else { return }
+    func openInFinder(_ path: String?) {
+        guard let path = path, let url = URL(string: path) else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 }
