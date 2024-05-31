@@ -7,6 +7,29 @@
 
 import SwiftUI
 import CoreData
+import os.log
+
+enum Log {
+    static let subsystem = Bundle.main.bundleIdentifier!
+
+    static let general = OSLog(subsystem: subsystem, category: "general")
+    static let network = OSLog(subsystem: subsystem, category: "network")
+    static let database = OSLog(subsystem: subsystem, category: "database")
+}
+
+func logDebug(_ message: StaticString, _ args: CVarArg..., category: OSLog = Log.general) {
+    #if DEBUG
+    os_log(message, log: category, type: .debug, args)
+    #endif
+}
+
+func logInfo(_ message: StaticString, _ args: CVarArg..., category: OSLog = Log.general) {
+    os_log(message, log: category, type: .info, args)
+}
+
+func logError(_ message: StaticString, _ args: CVarArg..., category: OSLog = Log.general) {
+    os_log(message, log: category, type: .error, args)
+}
 
 
 struct ContentView: View {
@@ -33,12 +56,6 @@ struct ContentView: View {
         _viewModel = StateObject(wrappedValue: FilePathsViewModel())
     }
     
-    
-    private func fileDidChange() {
-        // 重新读取文件
-        print("File changed!")
-        // 在这里添加你的文件读取逻辑
-    }
     var body: some View {
         List {
             ForEach(filePaths) { filePath in
@@ -182,12 +199,11 @@ struct ContentView: View {
                     enumerator.skipDescendants()
                     continue
                 }
+    
                 
-                if fileURL.lastPathComponent.contains("Assets23") {
-                    print("33")
-                }
-                
-                print("fileURL: \(fileURL), depth: \(currentDepth)")
+                // print("fileURL: \(fileURL), depth: \(currentDepth)")
+                // logDebug("fileURL found: %{public}@", fileURL.absoluteString)
+
                 if currentDepth > 5 {
                     enumerator.skipDescendants()
                     continue
@@ -195,16 +211,14 @@ struct ContentView: View {
                 
                 if fileURL.pathExtension == "appiconset" {
                     appiconsetURL = fileURL
-                    print("appiconsetURL found: \(appiconsetURL!)")
                     break // Stop after finding the first appiconset folder
                 }
             }
             
             var foundIcon = false
-            print("appiconsetURL: \(String(describing: appiconsetURL))")
 
             if let appiconset = appiconsetURL {
-                print("appiconsetURL: \(appiconset)")
+                // logDebug("appiconsetURL found: %{public}@", appiconset.absoluteString)
                 guard let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
                     DispatchQueue.main.async {
                         completion(nil)
@@ -214,7 +228,7 @@ struct ContentView: View {
 
                 while let iconFileURL = iconEnumerator.nextObject() as? URL, !foundIcon {
                     if iconFileURL.pathExtension == "png" {
-                        print("iconFileURL: \(iconFileURL)")
+                        // logDebug("iconFileURL found: %{public}@", iconFileURL.absoluteString)
                         if let iconData = try? Data(contentsOf: iconFileURL) {
                             DispatchQueue.main.async {
                                 completion(iconData)
@@ -224,8 +238,8 @@ struct ContentView: View {
                     }
                 }
             }
-            
             if !foundIcon {
+                logDebug("No appiconsetURL found: %{public}@", workPathURL.absoluteString)
                 DispatchQueue.main.async {
                     completion(nil)
                 }
@@ -248,7 +262,8 @@ struct ContentView: View {
             }
             try viewContext.save()
         } catch {
-            print("Error deleting all file paths: \(error)")
+            logDebug("Error deleting all file paths:  %{public}@", error.localizedDescription)
+
         }
         refreshUI()
     }
@@ -274,9 +289,10 @@ struct ContentView: View {
                         }
                     }
                 } else {
-                    print("Failed to access the resource.")
+                    logInfo("Failed to access the resource.")
                 }
-                print("At bookmark \(accessGranted).")
+                logDebug("At bookmark :  %{public}@", accessGranted)
+
             }
         }
     }
@@ -296,7 +312,7 @@ struct ContentView: View {
                 if accessGranted {
                     saveBookmarkData(from: userUrl, key: "dev")
                 } else {
-                    print("Failed to access the resource.")
+                    logInfo("Failed to access the resource.")
                 }
                 print("At bookmark \(accessGranted).")
             }
