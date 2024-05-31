@@ -135,9 +135,15 @@ func openInNS(_ path: String?) {
         return
     }
     let url = URL(fileURLWithPath: path)
+    let packageUrl = url.appending(path: "Package.swift")
+    let packageSuccess = NSWorkspace.shared.open(packageUrl)
+    if packageSuccess {
+        print("Open package result: \(packageSuccess)")
+    } else {
+        let success = NSWorkspace.shared.open(url)
+        print("Open result: \(success)")
+    }
     // Attempt to open the URL in Finder
-    let success = NSWorkspace.shared.open(url)
     
     // Log the result of the attempt
-    print("Open result: \(success)")
 }

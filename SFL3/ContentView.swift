@@ -11,16 +11,16 @@ import os.log
 
 enum Log {
     static let subsystem = Bundle.main.bundleIdentifier!
-
+    
     static let general = OSLog(subsystem: subsystem, category: "general")
     static let network = OSLog(subsystem: subsystem, category: "network")
     static let database = OSLog(subsystem: subsystem, category: "database")
 }
 
 func logDebug(_ message: StaticString, _ args: CVarArg..., category: OSLog = Log.general) {
-    #if DEBUG
+#if DEBUG
     os_log(message, log: category, type: .debug, args)
-    #endif
+#endif
 }
 
 func logInfo(_ message: StaticString, _ args: CVarArg..., category: OSLog = Log.general) {
@@ -38,7 +38,7 @@ struct ContentView: View {
         entity: FilePath.entity(),
         sortDescriptors: [
             NSSortDescriptor(keyPath: \FilePath.isPinned, ascending: false), // Pinned items first
-            NSSortDescriptor(keyPath: \FilePath.createdAt, ascending: true)   // Then by creation time
+            NSSortDescriptor(keyPath: \FilePath.updatedAt, ascending: false)   // Then by creation time
         ],
         animation: .default)
     private var filePaths: FetchedResults<FilePath>
@@ -81,7 +81,7 @@ struct ContentView: View {
                     Button(action: {
                         moveToTop(filePath)
                     }) {
-                        Image(systemName: "pin.fill")
+                        Image(systemName: filePath.isPinned ? "pin.fill" : "pin")
                     }
                 }
                 .contentShape(Rectangle()) // Make the entire HStack tappable
@@ -89,33 +89,35 @@ struct ContentView: View {
                     openInNS(filePath.path)
                 }
             }
-        }.id(counter) // 强制重新创建视图
-            .toolbar {
-                ToolbarItem {
-                    Button(action: deleteAllFilePaths) {
-                        Label("Clear All", systemImage: "trash")
-                    }
-                }
-                ToolbarItem {
-                    Button(action: requestAgent) {
-                        Label("Give Auth", systemImage: "plus.circle")
-                    }
-                }
-                ToolbarItem {
-                    Button(action: requestDev) {
-                        Label("Give Dev", systemImage: "plus.diamond")
-                    }
+        }
+        .id(counter) // 强制重新创建视图
+        .toolbar {
+            ToolbarItem {
+                Button(action: deleteAllFilePaths) {
+                    Label("Clear All", systemImage: "trash")
                 }
             }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) { [self] in
-                    loadFilePaths()
-                    iconFinder.findAppIcon(in: "")
+            ToolbarItem {
+                Button(action: requestAgent) {
+                    Label("Give Auth", systemImage: "plus.circle")
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: .filePathsDidUpdate)) { _ in
+            ToolbarItem {
+                Button(action: requestDev) {
+                    Label("Give Dev", systemImage: "plus.diamond")
+                }
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now()+1) { [self] in
                 loadFilePaths()
+                print("NSHomeDirectory():\(NSHomeDirectory())")
+                // ~/Library/Containers/com.dacaiguoguo.SFL3/Data/Library/Application Support/SFL3/SFL3.sqlite
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .filePathsDidUpdate)) { _ in
+            loadFilePaths()
+        }
     }
     
     private func openInFinder(_ path: String?) {
@@ -186,7 +188,7 @@ struct ContentView: View {
                 }
                 return
             }
-
+            
             var appiconsetURL: URL?
             var depthCounter = [URL: Int]()
             
@@ -194,16 +196,16 @@ struct ContentView: View {
                 let parentURL = fileURL.deletingLastPathComponent()
                 let currentDepth = (depthCounter[parentURL] ?? 0) + 1
                 depthCounter[fileURL] = currentDepth
-
+                
                 if fileURL.lastPathComponent == "Pods" || fileURL.pathExtension == "app" || fileURL.pathExtension == "Watch" {
                     enumerator.skipDescendants()
                     continue
                 }
-    
+                
                 
                 // print("fileURL: \(fileURL), depth: \(currentDepth)")
                 // logDebug("fileURL found: %{public}@", fileURL.absoluteString)
-
+                
                 if currentDepth > 5 {
                     enumerator.skipDescendants()
                     continue
@@ -216,7 +218,7 @@ struct ContentView: View {
             }
             
             var foundIcon = false
-
+            
             if let appiconset = appiconsetURL {
                 // logDebug("appiconsetURL found: %{public}@", appiconset.absoluteString)
                 guard let iconEnumerator = fileManager.enumerator(at: appiconset, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
@@ -225,7 +227,7 @@ struct ContentView: View {
                     }
                     return
                 }
-
+                
                 while let iconFileURL = iconEnumerator.nextObject() as? URL, !foundIcon {
                     if iconFileURL.pathExtension == "png" {
                         // logDebug("iconFileURL found: %{public}@", iconFileURL.absoluteString)
@@ -246,7 +248,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     
     func deleteAllFilePaths() {
         
@@ -263,7 +265,7 @@ struct ContentView: View {
             try viewContext.save()
         } catch {
             logDebug("Error deleting all file paths:  %{public}@", error.localizedDescription)
-
+            
         }
         refreshUI()
     }
@@ -292,7 +294,7 @@ struct ContentView: View {
                     logInfo("Failed to access the resource.")
                 }
                 logDebug("At bookmark :  %{public}@", accessGranted)
-
+                
             }
         }
     }
@@ -325,7 +327,8 @@ struct ContentView: View {
     func moveToTop(_ filePath: FilePath) {
         
         viewContext.perform {
-            filePath.isPinned = true // Mark as pinned
+            filePath.isPinned = !filePath.isPinned // Mark as pinned
+            filePath.updatedAt = Date()
             do {
                 try viewContext.save()
             } catch {
