@@ -33,6 +33,7 @@
 		5B296AE42C08401E009FDCE8 /* FilePathsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePathsViewModel.swift; sourceTree = "<group>"; };
 		5B296AE62C08412B009FDCE8 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
 		5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "XcodeIcon@2x.png"; sourceTree = "<group>"; };
+		5B29FB562C096EE400F6EE40 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5BAAF4F92C078299008D5017 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -66,6 +67,7 @@
 		5B16B2482C05942500132E42 /* SFL3 */ = {
 			isa = PBXGroup;
 			children = (
+				5B29FB562C096EE400F6EE40 /* Info.plist */,
 				5B16B2492C05942500132E42 /* SFL3App.swift */,
 				5B16B24B2C05942500132E42 /* ContentView.swift */,
 				5BAAF4F92C078299008D5017 /* FileWatcher.swift */,
@@ -307,6 +309,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SFL3/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -335,6 +338,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SFL3/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
