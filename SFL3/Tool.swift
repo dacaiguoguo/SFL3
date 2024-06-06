@@ -147,3 +147,22 @@ func openInNS(_ path: String?) {
     
     // Log the result of the attempt
 }
+
+
+func uninstallApp() {
+        let task = Process()
+        task.launchPath = "/usr/bin/xcrun"
+        task.arguments = ["simctl", "uninstall", "iPhone 15 Pro", "authenticator.2fa.app"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = pipe
+
+        task.launch()
+        task.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let output = String(data: data, encoding: .utf8) {
+            print(output)
+        }
+    }

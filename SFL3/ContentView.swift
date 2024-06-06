@@ -83,6 +83,9 @@ struct ContentView: View {
                     }) {
                         Image(systemName: filePath.isPinned ? "pin.fill" : "pin")
                     }
+                    Button(action: uninstallApp) {
+                        Label("Uninstall App", systemImage: "trash")
+                    }
                 }
                 .contentShape(Rectangle()) // Make the entire HStack tappable
                 .onTapGesture {
