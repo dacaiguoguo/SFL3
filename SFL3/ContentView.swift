@@ -137,8 +137,10 @@ struct ContentView: View {
             
             if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
                 for path in paths {
-                    // Users/yanguosun/.Trash/scenejtest/scenejtest.xcodeproj
-                    addFilePath(path)
+                    let url = URL(fileURLWithPath: path)
+                    if !url.pathComponents.contains(".Trash") {
+                        addFilePath(path)
+                    }
                 }
             }
         }
