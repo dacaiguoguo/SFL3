@@ -38,10 +38,12 @@ struct ContentView: View {
         entity: FilePath.entity(),
         sortDescriptors: [
             NSSortDescriptor(keyPath: \FilePath.isPinned, ascending: false), // Pinned items first
+            NSSortDescriptor(keyPath: \FilePath.pinnedOrder, ascending: true), // Sort pinned items by pinnedOrder
             NSSortDescriptor(keyPath: \FilePath.updatedAt, ascending: false)   // Then by creation time
         ],
         animation: .default)
     private var filePaths: FetchedResults<FilePath>
+
     @State private var counter = 0
     
     private func refreshUI() {
@@ -135,6 +137,7 @@ struct ContentView: View {
             
             if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
                 for path in paths {
+                    // Users/yanguosun/.Trash/scenejtest/scenejtest.xcodeproj
                     addFilePath(path)
                 }
             }
@@ -331,6 +334,9 @@ struct ContentView: View {
         
         viewContext.perform {
             filePath.isPinned = !filePath.isPinned // Mark as pinned
+            
+            filePath.pinnedOrder = filePath.isPinned ? Int64(Date().timeIntervalSince1970 * 1000) : 0
+
             filePath.updatedAt = Date()
             do {
                 try viewContext.save()
