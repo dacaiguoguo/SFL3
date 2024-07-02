@@ -196,7 +196,9 @@ struct ContentView: View {
             var isDirectory: ObjCBool = false
 
             if fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) {
-                if isDirectory.boolValue {
+                if fileURL.pathExtension == "xcodeproj" || fileURL.pathExtension == "xcworkspace" {
+                    workPathURL = fileURL.deletingLastPathComponent()
+                } else if isDirectory.boolValue {
                     workPathURL = fileURL
                 } else {
                     workPathURL = fileURL.deletingLastPathComponent()
