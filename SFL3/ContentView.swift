@@ -138,6 +138,7 @@ struct ContentView: View {
             if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
                 for path in paths {
                     let url = URL(fileURLWithPath: path)
+                    // if url.pathComponents.contains("aiserver") {
                     if !url.pathComponents.contains(".Trash") {
                         addFilePath(path)
                     }
@@ -189,7 +190,24 @@ struct ContentView: View {
     private func findAppIcon(in filePath: String, completion: @escaping (Data?) -> Void) {
         DispatchQueue.global(qos: .default).async {
             let fileManager = FileManager.default
-            let workPathURL = URL(fileURLWithPath: filePath).deletingLastPathComponent()
+            let fileURL = URL(fileURLWithPath: filePath)
+
+            var workPathURL: URL
+            var isDirectory: ObjCBool = false
+
+            if fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) {
+                if isDirectory.boolValue {
+                    workPathURL = fileURL
+                } else {
+                    workPathURL = fileURL.deletingLastPathComponent()
+                }
+            } else {
+                // 如果路径不存在，你可以决定如何处理这种情况。这里假设路径为文件路径。
+                workPathURL = fileURL.deletingLastPathComponent()
+            }
+
+            print("Work Path URL: \(workPathURL)")
+
             guard let enumerator = fileManager.enumerator(at: workPathURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) else {
                 DispatchQueue.main.async {
                     completion(nil)
