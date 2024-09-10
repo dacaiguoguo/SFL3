@@ -14,6 +14,7 @@
 		5B16B2532C05942600132E42 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2522C05942600132E42 /* Persistence.swift */; };
 		5B16B2562C05942600132E42 /* SFL3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 5B16B2542C05942600132E42 /* SFL3.xcdatamodeld */; };
 		5B16B25E2C059DF800132E42 /* com.apple.dt.xcode.sfl3 in Resources */ = {isa = PBXBuildFile; fileRef = 5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */; };
+		5B28A0FD2C8FE6E50060EB46 /* ChangeLog.md in Resources */ = {isa = PBXBuildFile; fileRef = 5B28A0FC2C8FE6E50060EB46 /* ChangeLog.md */; };
 		5B296AE52C08401E009FDCE8 /* FilePathsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B296AE42C08401E009FDCE8 /* FilePathsViewModel.swift */; };
 		5B296AE72C08412B009FDCE8 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B296AE62C08412B009FDCE8 /* Tool.swift */; };
 		5B29FB552C08C21200F6EE40 /* XcodeIcon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */; };
@@ -30,6 +31,7 @@
 		5B16B2552C05942600132E42 /* SFL3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SFL3.xcdatamodel; sourceTree = "<group>"; };
 		5B16B2572C05942600132E42 /* SFL3.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SFL3.entitlements; sourceTree = "<group>"; };
 		5B16B25D2C059DF800132E42 /* com.apple.dt.xcode.sfl3 */ = {isa = PBXFileReference; lastKnownFileType = file.bplist; path = com.apple.dt.xcode.sfl3; sourceTree = "<group>"; };
+		5B28A0FC2C8FE6E50060EB46 /* ChangeLog.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ChangeLog.md; sourceTree = "<group>"; };
 		5B296AE42C08401E009FDCE8 /* FilePathsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePathsViewModel.swift; sourceTree = "<group>"; };
 		5B296AE62C08412B009FDCE8 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
 		5B29FB542C08C21200F6EE40 /* XcodeIcon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "XcodeIcon@2x.png"; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 			children = (
 				5B29FB562C096EE400F6EE40 /* Info.plist */,
 				5B16B2492C05942500132E42 /* SFL3App.swift */,
+				5B28A0FC2C8FE6E50060EB46 /* ChangeLog.md */,
 				5B16B24B2C05942500132E42 /* ContentView.swift */,
 				5BAAF4F92C078299008D5017 /* FileWatcher.swift */,
 				5B296AE62C08412B009FDCE8 /* Tool.swift */,
@@ -154,6 +157,7 @@
 				5B29FB552C08C21200F6EE40 /* XcodeIcon@2x.png in Resources */,
 				5B16B2512C05942600132E42 /* Preview Assets.xcassets in Resources */,
 				5B16B24E2C05942600132E42 /* Assets.xcassets in Resources */,
+				5B28A0FD2C8FE6E50060EB46 /* ChangeLog.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
