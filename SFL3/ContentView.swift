@@ -136,6 +136,7 @@ struct ContentView: View {
         if let userUrl = resolvedBookmark(key: "ApplicationRecentDocuments") {
             
             if let paths = readSflWithFile(filePath: userUrl.appendingPathComponent("com.apple.dt.xcode.sfl3").path) {
+                print(paths)
                 for path in paths {
                     let url = URL(fileURLWithPath: path)
                     // if url.pathComponents.contains("aiserver") {
